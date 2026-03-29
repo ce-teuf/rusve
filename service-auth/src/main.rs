@@ -12,13 +12,16 @@ use axum::{routing::get, Router};
 use http::header::{AUTHORIZATION, CONTENT_TYPE};
 use http::HeaderValue;
 use http::Method;
+use opentelemetry::trace::TracerProvider as _;
 use std::sync::Arc;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 struct AppState {
     env: service_auth::Env,
     pool: deadpool_postgres::Pool,
+    metrics: service_auth::Metrics,
 }
 
 #[tokio::main]
@@ -27,9 +30,15 @@ async fn main() -> Result<()> {
     // Initalize environment variables
     let env: service_auth::Env = service_auth::init_envs()?;
 
-    // Initialize tracing
-    let filter = &env.rust_log;
-    tracing_subscriber::fmt().with_env_filter(filter).init();
+    // Initialize tracing + OpenTelemetry
+    let meter_provider = service_auth::init_metrics("service-auth");
+    let tracer_provider = service_auth::init_tracer("service-auth");
+    let tracer = tracer_provider.tracer("service-auth");
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(&env.rust_log))
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_opentelemetry::layer().with_tracer(tracer))
+        .init();
 
     // Connect to database
     let pool = service_auth::connect_to_db(&env).context("Failed to connect to database")?;
@@ -43,6 +52,7 @@ async fn main() -> Result<()> {
 
     // Create shared state
     let shared_state = Arc::new(AppState {
+        metrics: service_auth::Metrics::new("service-auth"),
         pool,
         env: env.clone(),
     });
@@ -69,6 +79,8 @@ async fn main() -> Result<()> {
     axum::serve(listener, app)
         .await
         .context("Failed to run HTTP server")?;
+    tracer_provider.shutdown()?;
+    meter_provider.shutdown()?;
     Ok(())
 }
 

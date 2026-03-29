@@ -1,7 +1,40 @@
 use anyhow::{Context, Result};
 use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
+use opentelemetry::{
+    metrics::{Counter, Histogram},
+    propagation::Extractor,
+    KeyValue,
+};
+use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::{
+    metrics::SdkMeterProvider,
+    propagation::TraceContextPropagator,
+    runtime,
+    trace::TracerProvider,
+    Resource,
+};
 use std::str::FromStr;
 mod proto;
+
+pub struct MetadataExtractor<'a>(pub &'a tonic::metadata::MetadataMap);
+
+impl<'a> Extractor for MetadataExtractor<'a> {
+    fn get(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|v| v.to_str().ok())
+    }
+    fn keys(&self) -> Vec<&str> {
+        self.0
+            .keys()
+            .filter_map(|k| {
+                if let tonic::metadata::KeyRef::Ascii(k) = k {
+                    Some(k.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+}
 
 #[derive(Clone)]
 pub struct Env {
@@ -29,6 +62,61 @@ pub fn init_envs() -> Result<Env> {
         s3_endpoint: std::env::var("S3_ENDPOINT").context("S3_ENDPOINT is not set")?,
         jwt_secret: std::env::var("JWT_SECRET").context("JWT_SECRET is not set")?,
     })
+}
+
+pub struct Metrics {
+    pub requests_total: Counter<u64>,
+    pub request_duration_ms: Histogram<f64>,
+}
+
+impl Metrics {
+    pub fn new(service_name: &'static str) -> Self {
+        let meter = opentelemetry::global::meter(service_name);
+        Self {
+            requests_total: meter
+                .u64_counter("grpc_requests_total")
+                .with_description("Total number of gRPC requests")
+                .build(),
+            request_duration_ms: meter
+                .f64_histogram("grpc_request_duration_ms")
+                .with_description("gRPC request duration in milliseconds")
+                .build(),
+        }
+    }
+}
+
+pub fn init_metrics(service_name: &'static str) -> SdkMeterProvider {
+    let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
+        .unwrap_or_else(|_| "http://localhost:4317".to_string());
+    let exporter = opentelemetry_otlp::MetricExporter::builder()
+        .with_tonic()
+        .with_endpoint(endpoint)
+        .build()
+        .expect("Failed to build OTLP metric exporter");
+    let reader = opentelemetry_sdk::metrics::PeriodicReader::builder(exporter, runtime::Tokio)
+        .with_interval(std::time::Duration::from_secs(15))
+        .build();
+    let provider = SdkMeterProvider::builder()
+        .with_reader(reader)
+        .with_resource(Resource::new(vec![KeyValue::new("service.name", service_name)]))
+        .build();
+    opentelemetry::global::set_meter_provider(provider.clone());
+    provider
+}
+
+pub fn init_tracer(service_name: &'static str) -> TracerProvider {
+    opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
+    let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT")
+        .unwrap_or_else(|_| "http://localhost:4317".to_string());
+    let exporter = opentelemetry_otlp::SpanExporter::builder()
+        .with_tonic()
+        .with_endpoint(endpoint)
+        .build()
+        .expect("Failed to build OTLP span exporter");
+    TracerProvider::builder()
+        .with_resource(Resource::new(vec![KeyValue::new("service.name", service_name)]))
+        .with_batch_exporter(exporter, runtime::Tokio)
+        .build()
 }
 
 pub fn connect_to_db(env: &Env) -> Result<deadpool_postgres::Pool> {

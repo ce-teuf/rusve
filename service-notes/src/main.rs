@@ -6,10 +6,13 @@ mod proto;
 
 use crate::proto::notes_service_server::NotesServiceServer;
 use anyhow::{Context, Result};
+use opentelemetry::trace::TracerProvider as _;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub struct MyService {
     env: service_notes::Env,
     pool: deadpool_postgres::Pool,
+    metrics: service_notes::Metrics,
 }
 
 #[tokio::main]
@@ -18,9 +21,15 @@ async fn main() -> Result<()> {
     // Initalize environment variables
     let env: service_notes::Env = service_notes::init_envs()?;
 
-    // Initialize tracing
-    let filter = &env.rust_log;
-    tracing_subscriber::fmt().with_env_filter(filter).init();
+    // Initialize tracing + OpenTelemetry
+    let meter_provider = service_notes::init_metrics("service-notes");
+    let tracer_provider = service_notes::init_tracer("service-notes");
+    let tracer = tracer_provider.tracer("service-notes");
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(&env.rust_log))
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_opentelemetry::layer().with_tracer(tracer))
+        .init();
 
     // Connect to database
     let pool = service_notes::connect_to_db(&env).context("Failed to connect to database")?;
@@ -35,12 +44,14 @@ async fn main() -> Result<()> {
     // Run gRPC server
     let addr = format!("[::]:{}", env.port).parse()?;
     tracing::info!("gRPC server started on port: {:?}", env.port);
-    let server = MyService { pool, env };
+    let server = MyService { pool, env, metrics: service_notes::Metrics::new("service-notes") };
     let svc = NotesServiceServer::new(server);
     tonic::transport::Server::builder()
         .add_service(svc)
         .serve(addr)
         .await
         .context("Failed to start gRPC server")?;
+    tracer_provider.shutdown()?;
+    meter_provider.shutdown()?;
     Ok(())
 }

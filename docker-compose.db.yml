@@ -1,32 +1,73 @@
 
+volumes:
+  caddy_data:
+  caddy_config:
+  db_users_data:
+  db_notes_data:
+  db_utils_data:
+
 services:
+  caddy:
+    image: caddy:alpine
+    container_name: rusve-caddy
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
   db-users:
     container_name: rusve-db-users
-    image: ceteuf/postgres-extended:pg18-alpine-v3 #postgres:15.1
+    image: ceteuf/postgres-extended:pg18-alpine-v3
     ports:
       - 5438:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: users
+    volumes:
+      - db_users_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   db-notes:
     container_name: rusve-db-notes
-    image: ceteuf/postgres-extended:pg18-alpine-v3 #postgres:15.1
+    image: ceteuf/postgres-extended:pg18-alpine-v3
     ports:
       - 5439:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: notes
+    volumes:
+      - db_notes_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   db-utils:
     container_name: rusve-db-utils
-    image: ceteuf/postgres-extended:pg18-alpine-v3 #postgres:15.1
+    image: ceteuf/postgres-extended:pg18-alpine-v3
     ports:
       - 5440:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRES_DB: users
-
+    volumes:
+      - db_utils_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

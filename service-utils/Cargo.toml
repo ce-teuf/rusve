@@ -15,6 +15,11 @@ jsonwebtoken = { version = "10.3", default-features = false, features = ["rust_c
 # Trace
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+opentelemetry = "0.27"
+opentelemetry_sdk = { version = "0.27", features = ["rt-tokio", "metrics"] }
+opentelemetry-otlp = { version = "0.27", features = ["grpc-tonic", "metrics"] }
+opentelemetry-semantic-conventions = "0.27"
+tracing-opentelemetry = "0.28"
 
 # Async
 tokio = { version = "1.50", features = ["rt-multi-thread", "macros", "sync" ] }

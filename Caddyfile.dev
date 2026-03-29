@@ -1,0 +1,9 @@
+{
+	admin off
+}
+
+http://localhost {
+	reverse_proxy /oauth-login/* host.docker.internal:8090
+	reverse_proxy /oauth-callback/* host.docker.internal:8090
+	reverse_proxy host.docker.internal:3000
+}

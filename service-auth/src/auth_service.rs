@@ -6,15 +6,26 @@ use crate::{
 use anyhow::Result;
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     response::Redirect,
 };
 use oauth2::{CsrfToken, PkceCodeChallenge, Scope, TokenResponse};
+use opentelemetry::{global, KeyValue};
 use std::{collections::HashMap, sync::Arc};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
+#[tracing::instrument(skip(state, headers), fields(provider = %provider))]
 pub async fn oauth_login(
     Path(provider): Path<String>,
     State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
 ) -> Result<Redirect, Redirect> {
+    let start = std::time::Instant::now();
+    let parent_cx = global::get_text_map_propagator(|prop| {
+        prop.extract(&service_auth::HeaderExtractor(&headers))
+    });
+    tracing::Span::current().set_parent(parent_cx);
+
     let conn = state.pool.get().await.map_err(|err| {
         tracing::error!("Failed to get DB connection: {:?}", err);
         Redirect::to(&format!("{}/auth?error=1", state.env.client_url))
@@ -48,14 +59,29 @@ pub async fn oauth_login(
             Redirect::to(&format!("{}/auth?error=1", state.env.client_url))
         })?;
 
+    state.metrics.requests_total.add(1, &[
+        KeyValue::new("handler", "oauth_login"),
+        KeyValue::new("status", "ok"),
+    ]);
+    state.metrics.request_duration_ms.record(start.elapsed().as_millis() as f64, &[
+        KeyValue::new("handler", "oauth_login"),
+    ]);
     Ok(Redirect::to(auth_url.as_ref()))
 }
 
+#[tracing::instrument(skip(state, headers, query), fields(provider = %provider))]
 pub async fn oauth_callback(
     Path(provider): Path<String>,
     State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
     Query(query): Query<HashMap<String, String>>,
 ) -> Result<Redirect, Redirect> {
+    let start = std::time::Instant::now();
+    let parent_cx = global::get_text_map_propagator(|prop| {
+        prop.extract(&service_auth::HeaderExtractor(&headers))
+    });
+    tracing::Span::current().set_parent(parent_cx);
+
     let conn = state.pool.get().await.map_err(|err| {
         tracing::error!("Failed to get DB connection: {:?}", err);
         Redirect::to(&format!("{}/auth?error=2", state.env.client_url))
@@ -147,6 +173,11 @@ pub async fn oauth_callback(
     let mut request = tonic::Request::new(crate::proto::Empty {});
     let metadata = request.metadata_mut();
     metadata.insert("x-authorization", jwt_token);
+    // Inject current trace context into the gRPC call to service-users
+    let cx = tracing::Span::current().context();
+    global::get_text_map_propagator(|prop| {
+        prop.inject_context(&cx, &mut service_auth::MetadataInjector(metadata));
+    });
     let token = client?
         .create_user(request)
         .await
@@ -157,6 +188,13 @@ pub async fn oauth_callback(
         .into_inner();
 
     tracing::info!("User authenticated");
+    state.metrics.requests_total.add(1, &[
+        KeyValue::new("handler", "oauth_callback"),
+        KeyValue::new("status", "ok"),
+    ]);
+    state.metrics.request_duration_ms.record(start.elapsed().as_millis() as f64, &[
+        KeyValue::new("handler", "oauth_callback"),
+    ]);
     Ok(Redirect::to(&format!(
         "{}/?token={}",
         state.env.client_url, token.id
