@@ -52,8 +52,9 @@ export const actions: Actions = {
             email_subject: getFormValue(form, "email_subject"),
             email_body: getFormValue(form, "email_body"),
         };
+        const actionMetadata = await createMetadata(locals.user.id);
         const res = await new Promise<import("$lib/safe").Safe<Email__Output>>((r) => {
-            utilsService.SendEmail(data, await createMetadata(locals.user.id), grpcSafe(r));
+            utilsService.SendEmail(data, actionMetadata, grpcSafe(r));
         });
 
         if (res.error) {

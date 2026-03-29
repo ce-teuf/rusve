@@ -27,11 +27,13 @@
             const response = await fetch(`${PUBLIC_AUTH_URL}`);
             if (response.status !== 200) {
                 toast.error("Error", "Server is not running");
+                loading = false;
                 return;
             }
         } catch (err) {
             console.error(err);
             toast.error("Error", "Server is not running");
+            loading = false;
             return;
         }
         window.location.href = `${PUBLIC_AUTH_URL}/oauth-login/${provider}`;

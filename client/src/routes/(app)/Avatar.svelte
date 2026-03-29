@@ -67,7 +67,7 @@
             aria-haspopup="true"
             onclick={() => (open = !open)}
         >
-            <span class="absolute -inset-1.5" />
+            <span class="absolute -inset-1.5"></span>
             <span class="sr-only">User Settings</span>
             <span class="relative inline-flex justify-center hover:cursor-pointer">
                 <span class="inline-flex h-8 w-8 overflow-hidden rounded-full bg-gray-100 transition hover:bg-gray-200">

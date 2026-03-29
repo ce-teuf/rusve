@@ -23,6 +23,7 @@ struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    rustls::crypto::ring::default_provider().install_default().unwrap();
     // Initalize environment variables
     let env: service_auth::Env = service_auth::init_envs()?;
 

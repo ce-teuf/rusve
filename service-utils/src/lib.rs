@@ -36,14 +36,12 @@ pub fn connect_to_db(env: &Env) -> Result<deadpool_postgres::Pool> {
     let mgr_config = ManagerConfig {
         recycling_method: RecyclingMethod::Fast,
     };
-    let certs =
-        rustls_native_certs::load_native_certs().context("Failed to load platform certs")?;
+    let result = rustls_native_certs::load_native_certs();
     let mut store = rustls::RootCertStore::empty();
-    for cert in certs {
-        store.add(&rustls::Certificate(cert.0))?;
+    for cert in result.certs {
+        store.add(cert)?;
     }
     let config = rustls::ClientConfig::builder()
-        .with_safe_defaults()
         .with_root_certificates(store)
         .with_no_client_auth();
     let tls = tokio_postgres_rustls::MakeRustlsConnect::new(config);

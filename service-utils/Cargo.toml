@@ -6,11 +6,11 @@ edition = "2024"
 [dependencies]
 # Main
 anyhow = "1.0"
-time = "0.3"
+time = { version = "0.3", features = ["formatting", "parsing", "macros"] }
 uuid = { version = "1.3", features = ["default", "v7"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-jsonwebtoken = "8.3"
+jsonwebtoken = { version = "10.3", default-features = false, features = ["rust_crypto"] }
 
 # Trace
 tracing = "0.1"
@@ -25,13 +25,14 @@ futures-core = "0.3"
 # Database
 tokio-postgres = { version = "0.7.16", features = ["with-uuid-1", "with-time-0_3", "array-impls"] }
 tokio-postgres-rustls = "0.13.0"
-rustls = "0.21"
-rustls-native-certs = "0.6"
+rustls = "0.23"
+rustls-native-certs = "0.8.3"
 deadpool-postgres = "0.14.1"
 
 # gRPC
 prost = "0.14.3"
-tonic = { version = "0.14.5", features = ["tls", "tls-roots"] }
+tonic = { version = "0.14.5", features = ["tls-ring", "tls-native-roots"] }
+tonic-prost = "0.14.5"
 
 # S3
 rust-s3 = "0.33"

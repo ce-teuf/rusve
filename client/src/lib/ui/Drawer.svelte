@@ -77,7 +77,7 @@
 </script>
 
 <div class="relative z-50" aria-labelledby="drawer-title-{id}" role="dialog" aria-modal="true">
-    <div transition:fade class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" />
+    <div transition:fade class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity"></div>
     <div class="fixed inset-0 overflow-hidden">
         <div class="absolute inset-0 overflow-hidden">
             <div class="pointer-events-none fixed inset-y-0 flex max-w-full {position === 'right' ? 'right-0 pl-10' : 'left-0 pr-10'}">

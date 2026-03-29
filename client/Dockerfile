@@ -1,5 +1,5 @@
 # Development
-FROM node:21-slim AS dev
+FROM node:25-slim AS dev
 
 WORKDIR /client
 
@@ -30,7 +30,7 @@ COPY . .
 CMD npm run dev
 
 # Build
-FROM node:21-slim AS build
+FROM node:25-slim AS build
 
 WORKDIR /client
 
@@ -59,7 +59,7 @@ RUN npm install
 RUN npm run build
 
 # Production
-FROM node:21-slim AS prod
+FROM node:25-slim AS prod
 WORKDIR /client
 
 COPY package.json /client/package.json

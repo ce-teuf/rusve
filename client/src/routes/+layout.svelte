@@ -9,10 +9,10 @@
     let { children }: { children: Snippet } = $props();
 
     let isNavigating = $state(false);
-    let t = $state<ReturnType<typeof setTimeout>>();
+    let t: ReturnType<typeof setTimeout>;
 
     $effect(() => {
-        if (navigating) {
+        if (navigating.to) {
             t = setTimeout(() => { isNavigating = true; }, 500);
         } else {
             clearTimeout(t);

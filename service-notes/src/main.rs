@@ -14,6 +14,7 @@ pub struct MyService {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    rustls::crypto::ring::default_provider().install_default().unwrap();
     // Initalize environment variables
     let env: service_notes::Env = service_notes::init_envs()?;
 

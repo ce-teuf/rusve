@@ -113,7 +113,7 @@ pub async fn oauth_callback(
         .exchange_code(oauth2::AuthorizationCode::new(code.to_string()))
         // Set the PKCE code verifier.
         .set_pkce_verifier(oauth2::PkceCodeVerifier::new(verifiers.pkce_verifier))
-        .request_async(oauth2::reqwest::async_http_client)
+        .request_async(&reqwest::Client::new())
         .await
         .map_err(|err| {
             tracing::error!("Failed to exchange code with token: {:?}", err);

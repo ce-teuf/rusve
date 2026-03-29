@@ -59,7 +59,7 @@
                     : ''}"
                 aria-invalid={!!error}
                 aria-describedby="{name}-description"
-            />
+            ></textarea>
         {/if}
     </div>
     <p id="{name}-description" class="mb-2 mt-0 text-sm leading-6 {error ? 'text-red-600' : 'text-gray-500'}">

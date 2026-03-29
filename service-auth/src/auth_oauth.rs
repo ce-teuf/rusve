@@ -1,5 +1,5 @@
 use anyhow::Result;
-use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, RedirectUrl, TokenUrl};
+use oauth2::{basic::BasicClient, AuthUrl, ClientId, ClientSecret, EndpointNotSet, EndpointSet, RedirectUrl, TokenUrl};
 use service_auth::Env;
 use serde::{Deserialize, Serialize};
 use tonic::metadata::{Ascii, MetadataValue};
@@ -21,7 +21,7 @@ pub trait OAuth {
     fn get_config_by_provider(provider: &str, env: Env) -> Result<Self>
     where
         Self: Sized;
-    fn build_oauth_client(&self) -> BasicClient;
+    fn build_oauth_client(&self) -> BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>;
     async fn get_user_info(&self, token: &str) -> Result<OAuthUser>;
     fn generate_jwt(&self, user: OAuthUser) -> Result<MetadataValue<Ascii>>;
 }
@@ -49,7 +49,7 @@ struct GoogleUser {
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct GithubUser {
     id: i64,
-    email: String,
+    email: Option<String>,
     avatar_url: String,
 }
 
@@ -84,20 +84,18 @@ impl OAuth for OAuthConfig {
             ))),
         }
     }
-    fn build_oauth_client(&self) -> BasicClient {
+    fn build_oauth_client(&self) -> BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet> {
         let auth_url =
             AuthUrl::new(self.auth_url.to_owned()).expect("Invalid authorization endpoint URL");
         let token_url =
             TokenUrl::new(self.token_url.to_owned()).expect("Invalid token endpoint URL");
         let redirect_url =
             RedirectUrl::new(self.redirect_url.to_owned()).expect("Invalid redirect URL");
-        BasicClient::new(
-            ClientId::new(self.client_id.to_owned()),
-            Some(ClientSecret::new(self.client_secret.to_owned())),
-            auth_url,
-            Some(token_url),
-        )
-        .set_redirect_uri(redirect_url)
+        BasicClient::new(ClientId::new(self.client_id.to_owned()))
+            .set_client_secret(ClientSecret::new(self.client_secret.to_owned()))
+            .set_auth_uri(auth_url)
+            .set_token_uri(token_url)
+            .set_redirect_uri(redirect_url)
     }
 
     async fn get_user_info(&self, token: &str) -> Result<OAuthUser> {
@@ -132,7 +130,7 @@ impl OAuth for OAuthConfig {
                 let user_profile = user_profile.json::<GithubUser>().await?;
                 Ok(OAuthUser {
                     sub: user_profile.id.to_string(),
-                    email: user_profile.email,
+                    email: user_profile.email.unwrap_or_default(),
                     avatar: user_profile.avatar_url,
                     // 5 min
                     exp: time::OffsetDateTime::now_utc().unix_timestamp() + 60 * 5,

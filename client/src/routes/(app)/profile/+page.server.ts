@@ -10,8 +10,9 @@ import type { UpsendFile, UpsendImage } from "$lib/types";
 
 export const load: PageServerLoad = async ({ locals }) => {
     const end = perf("load_profile");
+    const metadata = await createMetadata(locals.user.id);
     const profile = await new Promise<import("$lib/safe").Safe<import("$lib/proto/proto/Profile").Profile__Output>>((r) => {
-        usersService.GetProfileByUserId({}, await createMetadata(locals.user.id), grpcSafe(r));
+        usersService.GetProfileByUserId({}, metadata, grpcSafe(r));
     });
     if (profile.error) throw error(500, profile.msg);
 
@@ -78,8 +79,9 @@ export const actions: Actions = {
             cover_url,
         };
 
+        const actionMetadata = await createMetadata(locals.user.id);
         const res = await new Promise<import("$lib/safe").Safe<import("$lib/proto/proto/Profile").Profile__Output>>((r) => {
-            usersService.CreateProfile(data, await createMetadata(locals.user.id), grpcSafe(r));
+            usersService.CreateProfile(data, actionMetadata, grpcSafe(r));
         });
 
         if (res.error) {
