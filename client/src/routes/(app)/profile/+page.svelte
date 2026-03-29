@@ -5,6 +5,7 @@
     import Dropzone from "$lib/form/Dropzone.svelte";
     import FileInput from "$lib/form/FileInput.svelte";
     import Input from "$lib/form/Input.svelte";
+    import Input2 from "$lib/form/Input2.svelte";
     import SaveIcon from "$lib/icons/SaveIcon.svelte";
     import { toast } from "$lib/ui/toast";
     import type { PageData, ActionData } from "./$types";
@@ -59,6 +60,7 @@
             <input type="hidden" name="id" value={data.profile.id} />
             <div class="sm:col-span-4">
                 <Input name="name" label="Name" autocomplete="name" bind:value={data.profile.name} error={extractError(form?.fields, "name")} />
+                <Input2 name="name" label="Name" autocomplete="name" bind:value={data.profile.name} error={extractError(form?.fields, "name")} />
             </div>
             <div class="col-span-full">
                 <Input name="about" label="About" autocomplete="on" bind:value={data.profile.about} rows={3} error={extractError(form?.fields, "about")} helper="Write a few sentences about yourself." />
