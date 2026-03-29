@@ -1,34 +1,34 @@
-<script>
+<script lang="ts">
     import Toast from "$lib/ui/Toast.svelte";
     import { toastStore } from "$lib/ui/toast";
-    import { navigating } from "$app/stores";
+    import { navigating } from "$app/state";
     import "../app.css";
     import LoaderIcon from "$lib/icons/LoaderIcon.svelte";
+    import type { Snippet } from "svelte";
 
-    /** @type {boolean} */
-    let isNavigating = false;
-    /** @type {NodeJS.Timeout} */
-    let t;
-    $: if ($navigating) {
-        t = setTimeout(() => {
-            isNavigating = true;
-        }, 500);
-    } else {
-        clearTimeout(t);
-        isNavigating = false;
-    }
+    let { children }: { children: Snippet } = $props();
+
+    let isNavigating = $state(false);
+    let t = $state<ReturnType<typeof setTimeout>>();
+
+    $effect(() => {
+        if (navigating) {
+            t = setTimeout(() => { isNavigating = true; }, 500);
+        } else {
+            clearTimeout(t);
+            isNavigating = false;
+        }
+    });
 </script>
 
 {#if isNavigating}
-    <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black opacity-50"
-    >
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black opacity-50">
         <span class="sr-only">Loading...</span>
         <LoaderIcon />
     </div>
 {/if}
 
-<slot />
+{@render children()}
 
 <div
     aria-live="assertive"

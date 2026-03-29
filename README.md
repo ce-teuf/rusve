@@ -27,7 +27,7 @@ As an example, developers from my team who were familiar with NextJS were able t
     - **[Typesafety](https://protobuf.dev/)** - Thanks to protobuf, there is amazing type safety across the whole project, regardless of the language (not only for TypeScript, hi tRPC). Trust me; this is phenomenal.
   If you add one "field" to your User object, both JavaScript and Rust will lint, pointing out exactly where you need to take care of it. Adding a new language like Java or Go? Type safety for them as well.
     - **[Streaming](https://grpc.io/docs/what-is-grpc/core-concepts/#server-streaming-rpc)** - gRPC allows streaming data, which, for larger datasets, offers incredible performance.
-- **[Google Cloud Run](https://cloud.google.com/run)** - Thanks to dockerized application, it's very easy to deploy. Scaling done automatically, can set the min. instances to 1 to reduce cold start.
+- **[Caddy](https://caddyserver.com/)** - Reverse proxy handling HTTPS automatically via Let's Encrypt. Single entry point routing traffic to SvelteKit and the auth service, with zero TLS configuration needed.
 
 ![image](https://github.com/mpiorowski/rusve/assets/26543876/aa648032-8bf5-4039-ad88-15780ac36fea)
  
@@ -42,12 +42,9 @@ It supports features like Enums, as const, and even Zod's z.infer<typeof User>, 
 - **Single Source of Truth Validation** - Centralizing validation on the backend simplifies logic, streamlining error checks, and ensuring a single, authoritative source for error management. Displaying these errors on the frontend remains efficient, delivering a seamless user experience.
 - **Performance and Error Logging with Grafana Integration** - Efficiently log performance metrics and errors within the application, consolidating data for streamlined analysis. Utilize Grafana integration to visualize and monitor performance calls and errors, facilitating proactive management and optimization.
 - **Docker for Seamless Deployment** - Leverage Docker for consistent deployment across both development and production environments. Streamline server deployment by encapsulating the application and its dependencies in containers, ensuring easy setup and scalability while maintaining environment consistency.
-- **GitHub Actions for Automated Workflow** - Implement GitHub Actions to automate linting, code checks, and seamless deployments to the server. Streamline the development pipeline by integrating these actions, ensuring code quality and facilitating efficient, automatic updates to the production environment.
+- **GitHub Actions for Automated Workflow** - GitHub Actions automate linting and code checks on every pull request, ensuring code quality across all services.
 - **Client side streaming** - Thanks to SvelteKit's newest feature, we can load and render crucial data first. Subsequently, all remaining data is returned as promises and rendered when they resolve.
 - **Files, Images and Emails** - A little bit of self promotion, this application is using my another dead simple service (free) for managing files, images and emails - [UpSend](https://www.upsend.app)
-
-## Github action deployment
-![image](https://github.com/mpiorowski/rusve/assets/26543876/cc5022a0-446c-4a79-b985-42f8102271da)
 
 ## Aria and PWA with offline service workers
 ![image](https://user-images.githubusercontent.com/26543876/236647026-0db54439-b841-4e69-8a2f-6976e423b453.png)
@@ -58,17 +55,16 @@ Whenever You change proto definitions, always remember to generate new types:
 ```
 sh proto.sh
 ```
+
 ## Deployment
 
-The only prerequisites are `Docker` and `Docker Compose`. 
-
-Afterward, the only task remaining is to configure environment variables according to the deployment. No need for .env files or tedious copy/pasting — just straightforward environment variables, either configured on the system or written inline.
+The only prerequisites are `Docker` and `Docker Compose`.
 
 ### Development
 
 1. Start databases:
 ```
-docker compose -f docker-compose.db.yml up 
+docker compose -f docker-compose.db.yml up
 ```
 
 2. Start client + services:
@@ -85,29 +81,40 @@ STRIPE_PRICE_ID=STRIPE_PRICE_ID \
 S3_ACCESS_KEY=S3_ACCESS_KEY \
 S3_SECRET_KEY=S3_SECRET_KEY \
 S3_ENDPOINT=S3_ENDPOINT \
-docker compose -f docker-compose.app.yml up 
+docker compose -f docker-compose.app.yml up
 ```
 
-## Production deployment
+### Production (VPS)
 
-1. Go through each `deploy-***.yml` and change `env` acording to Your project.
+**Prerequisites**: A VPS with Docker + Docker Compose, and a domain pointing to it.
 
-2. Add secrets to github
-- JWT_SECRET
-- GCP_CREDENTIALS
-- GH_CLIENT_ID
-- GH_CLIENT_SECRET
-- GOOGLE_CLIENT_ID
-- GOOGLE_CLIENT_SECRET
-- JWT_SECRET
-- POSTGRES_DATABASE_URL
-- S3_ACCESS_KEY
-- S3_ENDPOINT
-- S3_SECRET_KEY
-- SENDGRID_API_KEY
-- STRIPE_API_KEY
-- STRIPE_PRICE_ID
+1. Edit `Caddyfile` and `docker-compose.prod.yml` — replace `yourdomain.com` with your actual domain.
 
-3. Add proper IAM permissions
+2. On the VPS, create a `.env` file with your secrets:
+```
+JWT_SECRET=
+DB_PASSWORD=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+SENDGRID_API_KEY=
+UPSEND_KEY=
+STRIPE_API_KEY=
+STRIPE_PRICE_ID=
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
+S3_ENDPOINT=
+```
 
-![image](https://user-images.githubusercontent.com/26543876/235579498-ce5d296e-3f14-4cb5-b6cd-d27419f4fc47.png)
+3. Start databases:
+```
+docker compose -f docker-compose.db.yml up -d
+```
+
+4. Build and start all services + Caddy:
+```
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Caddy automatically obtains a TLS certificate from Let's Encrypt on the first request. HTTP is redirected to HTTPS automatically.

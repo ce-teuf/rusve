@@ -1,7 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
+@theme {
+    --font-family-poppins: "Poppins", sans-serif;
+    --shadow-inset: inset 0 2px 2px 0px hsla(0, 0%, 0%, 0.4), inset 0 0px 2px 2px hsla(0, 0%, 0%, 0.3);
+}
 @layer base {
     @font-face {
         font-family: Poppins;
@@ -40,38 +41,13 @@
         font-display: swap;
     }
 }
+* { min-width: 0; }
+html { @apply h-full antialiased; }
+body { @apply h-full; font-family: var(--font-family-poppins); }
+h1 { @apply text-3xl font-semibold; font-family: var(--font-family-poppins); }
+h2 { @apply text-2xl font-semibold; font-family: var(--font-family-poppins); }
+h3 { @apply text-xl font-semibold; font-family: var(--font-family-poppins); }
+:focus { outline: none; }
+.no-scroll { overflow: hidden; }
+.scroll { overflow-y: scroll; }
 
-* {
-    min-width: 0;
-}
-
-html {
-    @apply h-full antialiased;
-}
-
-body {
-    @apply h-full font-poppins;
-}
-
-h1 {
-    @apply font-poppins text-3xl font-semibold;
-}
-
-h2 {
-    @apply font-poppins text-2xl font-semibold;
-}
-
-h3 {
-    @apply font-poppins text-xl font-semibold;
-}
-
-:focus {
-    outline: none;
-}
-
-.no-scroll {
-    overflow: hidden;
-}
-.scroll {
-    overflow-y: scroll;
-}

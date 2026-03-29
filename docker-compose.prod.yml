@@ -1,0 +1,96 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+  client:
+    container_name: rusve-client
+    working_dir: /client
+    build:
+      context: ./client
+      target: prod
+      args:
+        ENV: production
+        COOKIE_DOMAIN: yourdomain.com
+        PUBLIC_AUTH_URL: https://yourdomain.com
+        USERS_URI: service-users:443
+        NOTES_URI: service-notes:443
+        UTILS_URI: service-utils:443
+        GRPC_SSL: "false"
+        UPSEND_KEY: ${UPSEND_KEY}
+        JWT_SECRET: ${JWT_SECRET}
+
+  service-auth:
+    container_name: rusve-service-auth
+    working_dir: /app
+    build:
+      context: ./service-auth
+      target: prod
+    environment:
+      PORT: 443
+      RUST_LOG: info
+      DATABASE_URL: postgresql://?host=db-users&user=postgres&password=${DB_PASSWORD}&dbname=users
+      CLIENT_URL: https://yourdomain.com
+      AUTH_URL: https://yourdomain.com
+      USERS_URL: http://service-users:443
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+
+  service-users:
+    container_name: rusve-service-users
+    working_dir: /app
+    build:
+      context: ./service-users
+      target: prod
+    environment:
+      PORT: 443
+      RUST_LOG: info
+      DATABASE_URL: postgresql://?host=db-users&user=postgres&password=${DB_PASSWORD}&dbname=users
+      JWT_SECRET: ${JWT_SECRET}
+      CLIENT_URL: https://yourdomain.com
+      STRIPE_API_KEY: ${STRIPE_API_KEY}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID}
+
+  service-notes:
+    container_name: rusve-service-notes
+    working_dir: /app
+    build:
+      context: ./service-notes
+      target: prod
+    environment:
+      PORT: 443
+      RUST_LOG: info
+      DATABASE_URL: postgresql://?host=db-notes&user=postgres&password=${DB_PASSWORD}&dbname=notes
+      USERS_URL: http://service-users:443
+      JWT_SECRET: ${JWT_SECRET}
+
+  service-utils:
+    container_name: rusve-service-utils
+    working_dir: /app
+    build:
+      context: ./service-utils
+      target: prod
+    environment:
+      PORT: 443
+      RUST_LOG: info
+      DATABASE_URL: postgresql://?host=db-utils&user=postgres&password=${DB_PASSWORD}&dbname=users
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_BUCKET_NAME: rusve
+      JWT_SECRET: ${JWT_SECRET}
+
+volumes:
+  caddy_data:
+  caddy_config:

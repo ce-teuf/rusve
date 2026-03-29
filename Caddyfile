@@ -1,0 +1,9 @@
+{
+    email your@email.com
+}
+
+yourdomain.com {
+    reverse_proxy /oauth-login/* service-auth:443
+    reverse_proxy /oauth-callback/* service-auth:443
+    reverse_proxy client:8080
+}
