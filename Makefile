@@ -74,48 +74,49 @@ wait-db:
 		echo "  $$svc healthy"; \
 	done
 
-# ── Write client/.env for local URIs ────────────────────────
+# ── Write clients/webapp/.env for local URIs ────────────────────────
 client-env:
 	@printf 'USERS_URI=localhost:%s\nNOTES_URI=localhost:%s\nUTILS_URI=localhost:%s\nGRPC_SSL=false\nENV=development\nCOOKIE_DOMAIN=localhost\nPUBLIC_AUTH_URL=http://localhost:8080\nJWT_SECRET=%s\nUPSEND_KEY=%s\n' \
 		$(USERS_PORT) $(NOTES_PORT) $(UTILS_PORT) "$(JWT_SECRET)" "$(UPSEND_KEY)" \
-		> client/.env
-	@echo "client/.env written"
+		> clients/webapp/.env
+	@echo "clients/webapp/.env written"
 
 # ── Client only ─────────────────────────────────────────────
 client: client-env
-	cd client && pnpm run dev
+	cd clients/webapp && pnpm run dev
 
 # ── Debug ────────────────────────────────────────────────────
 dev: wait-db client-env
 	@trap 'kill 0' INT TERM; \
-	(cd service-auth  && $(ENV_AUTH)  cargo run) & \
-	(cd service-users && $(ENV_USERS) cargo run) & \
-	(cd service-notes && $(ENV_NOTES) cargo run) & \
-	(cd service-utils && $(ENV_UTILS) cargo run) & \
-	(cd client        && pnpm run dev) & \
+	(cd services/service-auth  && $(ENV_AUTH)  cargo run) & \
+	(cd services/service-users && $(ENV_USERS) cargo run) & \
+	(cd services/service-notes && $(ENV_NOTES) cargo run) & \
+	(cd services/service-utils && $(ENV_UTILS) cargo run) & \
+	(cd clients/webapp        && pnpm run dev) & \
 	wait
 
 # ── Watch (recompile on save) ────────────────────────────────
 watch: wait-db client-env
 	@trap 'kill 0' INT TERM; \
-	(cd service-auth  && $(ENV_AUTH)  cargo watch -x run) & \
-	(cd service-users && $(ENV_USERS) cargo watch -x run) & \
-	(cd service-notes && $(ENV_NOTES) cargo watch -x run) & \
-	(cd service-utils && $(ENV_UTILS) cargo watch -x run) & \
-	(cd client        && pnpm run dev) & \
+	(cd services/service-auth  && $(ENV_AUTH)  cargo watch -x run) & \
+	(cd services/service-users && $(ENV_USERS) cargo watch -x run) & \
+	(cd services/service-notes && $(ENV_NOTES) cargo watch -x run) & \
+	(cd services/service-utils && $(ENV_UTILS) cargo watch -x run) & \
+	(cd clients/client        && pnpm run dev) & \
 	wait
 
 # ── Release ──────────────────────────────────────────────────
 release: wait-db client-env
-	cargo build --release --manifest-path service-auth/Cargo.toml
-	cargo build --release --manifest-path service-users/Cargo.toml
-	cargo build --release --manifest-path service-notes/Cargo.toml
-	cargo build --release --manifest-path service-utils/Cargo.toml
-	cd client && pnpm run build
+	cargo build --release --manifest-path services/service-auth/Cargo.toml
+	cargo build --release --manifest-path services/service-users/Cargo.toml
+	cargo build --release --manifest-path services/service-notes/Cargo.toml
+	cargo build --release --manifest-path services/service-utils/Cargo.toml
+	cd clients/webapp && pnpm run build
 	@trap 'kill 0' INT TERM; \
-	($(ENV_AUTH)  ./service-auth/target/release/service-auth)   & \
-	($(ENV_USERS) ./service-users/target/release/service-users) & \
-	($(ENV_NOTES) ./service-notes/target/release/service-notes) & \
-	($(ENV_UTILS) ./service-utils/target/release/service-utils) & \
-	(cd client && node build) & \
+	($(ENV_AUTH)  ./services/service-auth/target/release/service-auth)   & \
+	($(ENV_USERS) ./services/service-users/target/release/service-users) & \
+	($(ENV_NOTES) ./services/service-notes/target/release/service-notes) & \
+	($(ENV_UTILS) ./services/service-utils/target/release/service-utils) & \
+	(cd clients/webapp && node build) & \
 	wait
+

@@ -1,9 +1,9 @@
 services:
   client:
     container_name: rusve-client
-    working_dir: /client
+    working_dir: /clients/webapp
     build:
-      context: ./client
+      context: ./clients/webapp
       target: dev
       args:
         ENV: development
@@ -15,8 +15,8 @@ services:
         UPSEND_KEY: ${UPSEND_KEY}
         JWT_SECRET: ${JWT_SECRET}
     volumes:
-      - ./client/src:/client/src
-      - ./client/.svelte-kit:/client/.svelte-kit
+      - ./clients/webapp/src:/clients/webapp/src
+      - ./clients/webapp/.svelte-kit:/clients/webapp/.svelte-kit
     ports:
       - 3000:3000
 
@@ -24,10 +24,10 @@ services:
     container_name: rusve-service-auth
     working_dir: /app
     build:
-      context: ./service-auth
+      context: ./services/service-auth
       target: dev
     volumes:
-      - ./service-auth/src:/app/src
+      - ./services/service-auth/src:/app/src # regarder la partie droite
     environment:
       PORT: 443
       RUST_LOG: info
@@ -47,10 +47,10 @@ services:
     container_name: rusve-service-users
     working_dir: /app
     build:
-      context: ./service-users
+      context: ./services/service-users
       target: dev
     volumes:
-      - ./service-users/src:/app/src
+      - ./services/service-users/src:/app/src # regarder la partie droite
     environment:
       PORT: 443
       RUST_LOG: info
@@ -64,10 +64,10 @@ services:
     container_name: rusve-service-notes
     working_dir: /app
     build:
-      context: ./service-notes
+      context: ./services/service-notes
       target: dev
     volumes:
-      - ./service-notes/src:/app/src
+      - ./services/service-notes/src:/app/src # regarder la partie droite
     environment:
       PORT: 443
       RUST_LOG: info
@@ -79,10 +79,10 @@ services:
     container_name: rusve-service-utils
     working_dir: /app
     build:
-      context: ./service-utils
+      context: ./services/service-utils
       target: dev
     volumes:
-      - ./service-utils/src:/app/src
+      - ./services/service-utils/src:/app/src # regarder la partie droite
       - ./files:/app/files
     environment:
       PORT: 443

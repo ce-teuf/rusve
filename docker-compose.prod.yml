@@ -12,9 +12,9 @@ services:
 
   client:
     container_name: rusve-client
-    working_dir: /client
+    working_dir: /clients/webapp/
     build:
-      context: ./client
+      context: ./clients/webapp/
       target: prod
       args:
         ENV: production
@@ -31,7 +31,7 @@ services:
     container_name: rusve-service-auth
     working_dir: /app
     build:
-      context: ./service-auth
+      context: ./services/service-auth
       target: prod
     environment:
       PORT: 443
@@ -50,7 +50,7 @@ services:
     container_name: rusve-service-users
     working_dir: /app
     build:
-      context: ./service-users
+      context: ./services/service-users
       target: prod
     environment:
       PORT: 443
@@ -65,7 +65,7 @@ services:
     container_name: rusve-service-notes
     working_dir: /app
     build:
-      context: ./service-notes
+      context: ./services/service-notes
       target: prod
     environment:
       PORT: 443
@@ -78,7 +78,7 @@ services:
     container_name: rusve-service-utils
     working_dir: /app
     build:
-      context: ./service-utils
+      context: ./services/service-utils
       target: prod
     environment:
       PORT: 443
