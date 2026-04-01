@@ -1,12 +1,27 @@
-import adapter from "@sveltejs/adapter-node";
+import adapterNode from "@sveltejs/adapter-node";
+import adapterStatic from "@sveltejs/adapter-static";
 import type { Config } from "@sveltejs/kit";
+
+const isMobile = process.env.BUILD_TARGET === "mobile";
 
 const config: Config = {
     kit: {
-        // adapter-auto only supports some environments, see https://kit.svelte.dev/docs/adapter-auto for a list.
-        // If your environment is not supported or you settled on a specific environment, switch out the adapter.
-        // See https://kit.svelte.dev/docs/adapters for more information about adapters.
-        adapter: adapter(),
+        adapter: isMobile
+            ? adapterStatic({
+                  fallback: "index.html",
+                  strict: false,
+              })
+            : adapterNode(),
+
+        // When building for mobile (SPA), nothing is prerendered —
+        // all data loading happens client-side via +page.ts → /api/* REST calls.
+        prerender: isMobile
+            ? {
+                  entries: [],
+                  handleMissingId: "warn",
+                  handleHttpError: "warn",
+              }
+            : {},
     },
 };
 

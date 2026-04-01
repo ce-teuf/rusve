@@ -1,15 +1,17 @@
 rm -rf ./clients/webapp/src/lib/proto
 mkdir ./clients/webapp/src/lib/proto
-rm -rf ./services/service-auth/src/proto
-rm -rf ./services/service-users/src/proto
-rm -rf ./services/service-notes/src/proto
-rm -rf ./services/service-utils/src/proto
+
+rm -f ./services/service-auth/src/proto.rs
+rm -f ./services/service-users/src/proto.rs
+rm -f ./services/service-notes/src/proto.rs
+rm -f ./services/service-utils/src/proto.rs
+rm -f ./services/service-scraper/src/proto.rs
 
 cd ./proto
 
-# Client
+# Client (TypeScript bindings)
 npm i
 npm run proto
 
-# Server
+# Server (Rust bindings)
 cargo run

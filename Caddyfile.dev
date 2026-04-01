@@ -6,4 +6,7 @@ http://localhost {
 	reverse_proxy /oauth-login/* host.docker.internal:8090
 	reverse_proxy /oauth-callback/* host.docker.internal:8090
 	reverse_proxy host.docker.internal:3000
+	reverse_proxy /local-register host.docker.internal:8090
+	reverse_proxy /local-login host.docker.internal:8090
+	reverse_proxy /verify host.docker.internal:8090
 }

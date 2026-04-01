@@ -1,10 +1,12 @@
 import { error, fail } from "@sveltejs/kit";
 import { getFormValue } from "$lib/utils";
 import { createMetadata } from "$lib/server/metadata";
-import { notesService } from "$lib/server/grpc";
+import { notesService, usersService } from "$lib/server/grpc";
 import { grpcSafe } from "$lib/safe";
 import { perf } from "$lib/server/logger";
 import type { PageServerLoad, Actions } from "./$types";
+import type { Note__Output } from "$lib/proto/proto/Note";
+import type { Profile__Output } from "$lib/proto/proto/Profile";
 
 export const load: PageServerLoad = async ({ locals, params }) => {
     const end = perf("load_note");
@@ -12,14 +14,24 @@ export const load: PageServerLoad = async ({ locals, params }) => {
     if (!id) throw error(409, "Missing note id");
 
     const metadata = await createMetadata(locals.user.id);
-    const req = await new Promise<import("$lib/safe").Safe<import("$lib/proto/proto/Note").Note__Output>>((r) => {
+    const noteReq = await new Promise<import("$lib/safe").Safe<Note__Output>>((r) => {
         notesService.GetNoteById({ id }, metadata, grpcSafe(r));
     });
 
-    if (req.error) throw error(404, req.msg);
+    if (noteReq.error) throw error(404, noteReq.msg);
+    if (!noteReq.data) throw error(404, "Note not found");
+
+    const profileReq = await new Promise<import("$lib/safe").Safe<Profile__Output>>((r) => {
+        usersService.GetProfileByUserId({}, metadata, grpcSafe(r));
+    });
 
     end();
-    return { note: req.data };
+    return {
+        note: noteReq.data,
+        profile: profileReq.data,
+        email: locals.user.email,
+        avatar: locals.user.avatar,
+    };
 };
 
 export const actions: Actions = {

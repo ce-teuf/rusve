@@ -7,8 +7,17 @@
     import Pagination from "$lib/ui/Pagination.svelte";
     import { toast } from "$lib/ui/toast";
     import type { PageData, ActionData } from "./$types";
+    import type { Email__Output } from "$lib/proto/proto/Email"
 
-    let { data, form }: { data: PageData; form: ActionData } = $props();
+    let { data, form }: { 
+        data: PageData & {
+            emails: Email__Output[];
+            total: number;
+            pageSize: number;
+            error?: string;
+        }; 
+        form: ActionData 
+    } = $props();
 
     $effect(() => {
         if (form?.error || data.error) {

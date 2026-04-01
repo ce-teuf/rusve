@@ -11,8 +11,21 @@
     import Drawer from "$lib/ui/Drawer.svelte";
     import NotePage from "./[noteId]/+page.svelte";
     import type { PageData, ActionData } from "./$types";
+    import type { PageData as NotePageData } from "./[noteId]/$types";
+    import type { NoteResponse__Output } from "$lib/proto/proto/NoteResponse";
+    import type { Note__Output } from "$lib/proto/proto/Note";
 
-    let { data, form }: { data: PageData; form: ActionData } = $props();
+
+    // let { data, form }: { data: PageData; form: ActionData } = $props();
+    let { data, form }: { 
+        data: PageData & {
+            notes: Note__Output[];
+            total: number;
+            pageSize: number;
+            error?: string;
+        }; 
+        form: ActionData 
+    } = $props();
 
     $effect(() => {
         if (form?.error || data?.error) {
@@ -30,7 +43,7 @@
         const { href } = e.currentTarget;
         const result = await preloadData(href);
         if (result["type"] === "loaded" && result["status"] === 200) {
-            pushState(href, { noteDrawer: result["data"], open: true });
+            pushState(href, { noteDrawer: result["data"] as NotePageData, open: true });
         } else {
             goto(href);
         }

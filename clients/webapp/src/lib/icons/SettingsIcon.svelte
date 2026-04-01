@@ -1,3 +1,10 @@
+<script lang="ts">
+    interface Props {
+        class?: string;
+    }
+    let {class: className = ""}: Props = $props();
+</script>
+
 <svg
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -8,7 +15,7 @@
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
-    class="feather feather-settings"
+    class="{className} feather feather-settings"
 >
     <circle cx="12" cy="12" r="3"></circle>
     <path

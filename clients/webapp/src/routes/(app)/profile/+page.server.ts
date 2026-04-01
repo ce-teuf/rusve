@@ -100,7 +100,7 @@ export const actions: Actions = {
                     email_html: `<p>Hi ${res.data.name},</p><p>You've updated your profile.</p>`,
                 },
             }),
-        ).catch(() => logger.error("Failed to send email to user", { email: locals.user.email }));
+        ).catch(() => logger.error({ email: locals.user.email }, "Failed to send email to user"));
 
         end();
         return { profile: res.data };

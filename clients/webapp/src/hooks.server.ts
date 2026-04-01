@@ -1,4 +1,5 @@
 import { COOKIE_DOMAIN } from "$env/static/private";
+import { building } from "$app/environment";
 import { grpcSafe } from "$lib/safe";
 import { usersService } from "$lib/server/grpc";
 import { logger, perf } from "$lib/server/logger";
@@ -7,6 +8,9 @@ import { redirect, type Handle } from "@sveltejs/kit";
 import type { AuthResponse__Output } from "$lib/proto/proto/AuthResponse";
 
 export const handle: Handle = async ({ event, resolve }) => {
+    // During `pnpm run build:mobile` (adapter-static fallback generation),
+    // skip all auth logic — there is no session to validate at build time.
+    if (building) return await resolve(event);
     const end = perf("auth");
     event.locals.user = {
         id: "",
@@ -25,6 +29,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 
     if (event.url.pathname === "/auth") {
         event.cookies.set("token", "", { domain: COOKIE_DOMAIN, path: "/", maxAge: 0 });
+        return await resolve(event);
+    }
+    if (event.url.pathname === "/auth/register" || event.url.pathname === "/auth/verify") {
         return await resolve(event);
     }
 

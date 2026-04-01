@@ -1,14 +1,19 @@
 mod auth_db;
 mod auth_oauth;
 mod auth_service;
+mod local_auth;
 mod migrations;
 mod proto;
 
 use anyhow::Context;
 use anyhow::Result;
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+    Argon2,
+};
 use axum::http::StatusCode;
 use axum::Json;
-use axum::{routing::get, Router};
+use axum::{routing::{get, post}, Router};
 use http::header::{AUTHORIZATION, CONTENT_TYPE};
 use http::HeaderValue;
 use http::Method;
@@ -22,6 +27,9 @@ struct AppState {
     env: service_auth::Env,
     pool: deadpool_postgres::Pool,
     metrics: service_auth::Metrics,
+    /// Pre-computed Argon2id hash used in login to keep response time constant
+    /// whether or not the email exists — prevents timing-based email enumeration.
+    dummy_hash: String,
 }
 
 #[tokio::main]
@@ -50,11 +58,19 @@ async fn main() -> Result<()> {
         .context("Failed to run migrations")?;
     tracing::info!("Migrations complete");
 
+    // Pre-compute a dummy Argon2id hash used for timing-safe login checks.
+    let dummy_salt = SaltString::generate(&mut OsRng);
+    let dummy_hash = Argon2::default()
+        .hash_password(b"timing-safe-placeholder-value", &dummy_salt)
+        .context("Failed to compute dummy hash")?
+        .to_string();
+
     // Create shared state
     let shared_state = Arc::new(AppState {
         metrics: service_auth::Metrics::new("service-auth"),
         pool,
         env: env.clone(),
+        dummy_hash,
     });
 
     let cors = CorsLayer::new()
@@ -65,10 +81,11 @@ async fn main() -> Result<()> {
     let app = Router::new()
         .route("/", get(root))
         .route("/oauth-login/:provider", get(auth_service::oauth_login))
-        .route(
-            "/oauth-callback/:provider",
-            get(auth_service::oauth_callback),
-        )
+        .route("/oauth-callback/:provider", get(auth_service::oauth_callback))
+        .route("/local-register", post(local_auth::local_register))
+        .route("/resend-verification", post(local_auth::resend_verification))
+        .route("/verify", post(local_auth::verify_account))
+        .route("/local-login", post(local_auth::local_login))
         .with_state(shared_state.clone())
         .layer(ServiceBuilder::new().layer(cors));
 

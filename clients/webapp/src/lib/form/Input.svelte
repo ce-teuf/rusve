@@ -31,7 +31,7 @@
 </script>
 
 <div class={className}>
-    <label for={name} class="block text-sm font-medium leading-6">{label}</label>
+    <label for={name} class="block text-sm font-medium leading-6 text-white">{label}</label>
     <div class="mt-2">
         {#if rows === 0}
             <input

@@ -9,8 +9,18 @@
     import SaveIcon from "$lib/icons/SaveIcon.svelte";
     import { toast } from "$lib/ui/toast";
     import type { PageData, ActionData } from "./$types";
+    import type { Profile__Output } from "$lib/proto/proto/Profile";
+    import type { UpsendFile } from "$lib/types";
+    import type { Safe } from "$lib/safe";
 
-    let { data, form }: { data: PageData; form: ActionData } = $props();
+
+    let { data, form }: { 
+        data: PageData & { 
+            profile: Profile__Output;
+            stream: {resume: Promise<Safe<UpsendFile | undefined>>};
+        }; 
+        form: ActionData 
+    } = $props();
 
     $effect(() => {
         if (form?.error) toast.error("Error", form?.error || "Unknown error");

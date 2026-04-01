@@ -48,3 +48,8 @@ reqwest = { version = "0.12", features = ["default", "json"] }
 
 # OAuth
 oauth2 = { version = "5.0", features = ["reqwest"] }
+
+# Password hashing (Argon2id, OWASP recommended)
+argon2 = { version = "0.5", features = ["std"] }
+password-hash = { version = "0.5", features = ["rand_core"] }
+rand = "0.8"

@@ -182,6 +182,102 @@ impl FileTarget {
     }
 }
 #[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct Source {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub created: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub updated: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub source_url: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub source_type: ::prost::alloc::string::String,
+    /// "AUTO" | "MANUAL"
+    #[prost(string, tag = "7")]
+    pub integration_mode: ::prost::alloc::string::String,
+    /// cron expression e.g. "0 2 * * \*"
+    #[prost(string, tag = "8")]
+    pub auto_schedule: ::prost::alloc::string::String,
+    /// JSON-serialized array of FieldRule
+    #[prost(string, tag = "9")]
+    pub field_rules: ::prost::alloc::string::String,
+    #[prost(bool, tag = "10")]
+    pub active: bool,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct Job {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub created: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub updated: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub source_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "5")]
+    pub source_url: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub source_type: ::prost::alloc::string::String,
+    /// RUNNING | DONE | FAILED
+    #[prost(string, tag = "7")]
+    pub status: ::prost::alloc::string::String,
+    #[prost(int64, tag = "8")]
+    pub item_count: i64,
+    #[prost(string, tag = "9")]
+    pub error: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct JobResponse {
+    #[prost(message, optional, tag = "1")]
+    pub job: ::core::option::Option<Job>,
+    #[prost(string, tag = "2")]
+    pub source_name: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct Item {
+    #[prost(string, tag = "1")]
+    pub id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub created: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub updated: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub job_id: ::prost::alloc::string::String,
+    /// JSON-serialized
+    #[prost(string, tag = "5")]
+    pub raw_data: ::prost::alloc::string::String,
+    /// PENDING | VALID | INVALID | APPROVED | REJECTED | PUSHED
+    #[prost(string, tag = "6")]
+    pub validation_status: ::prost::alloc::string::String,
+    /// JSON-serialized array of strings
+    #[prost(string, tag = "7")]
+    pub validation_errors: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub pushed_at: ::prost::alloc::string::String,
+    #[prost(string, tag = "9")]
+    pub pushed_target: ::prost::alloc::string::String,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ItemFilter {
+    #[prost(string, tag = "1")]
+    pub job_id: ::prost::alloc::string::String,
+    /// "" = all
+    #[prost(string, tag = "2")]
+    pub status: ::prost::alloc::string::String,
+    #[prost(int64, tag = "3")]
+    pub offset: i64,
+    #[prost(int64, tag = "4")]
+    pub limit: i64,
+}
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Empty {}
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -2289,6 +2385,1091 @@ pub mod utils_service_server {
     /// Generated gRPC service name
     pub const SERVICE_NAME: &str = "proto.UtilsService";
     impl<T> tonic::server::NamedService for UtilsServiceServer<T> {
+        const NAME: &'static str = SERVICE_NAME;
+    }
+}
+/// Generated client implementations.
+pub mod scraper_service_client {
+    #![allow(
+        unused_variables,
+        dead_code,
+        missing_docs,
+        clippy::wildcard_imports,
+        clippy::let_unit_value,
+    )]
+    use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
+    #[derive(Debug, Clone)]
+    pub struct ScraperServiceClient<T> {
+        inner: tonic::client::Grpc<T>,
+    }
+    impl ScraperServiceClient<tonic::transport::Channel> {
+        /// Attempt to create a new client by connecting to a given endpoint.
+        pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
+        where
+            D: TryInto<tonic::transport::Endpoint>,
+            D::Error: Into<StdError>,
+        {
+            let conn = tonic::transport::Endpoint::new(dst)?.connect().await?;
+            Ok(Self::new(conn))
+        }
+    }
+    impl<T> ScraperServiceClient<T>
+    where
+        T: tonic::client::GrpcService<tonic::body::Body>,
+        T::Error: Into<StdError>,
+        T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
+        <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
+    {
+        pub fn new(inner: T) -> Self {
+            let inner = tonic::client::Grpc::new(inner);
+            Self { inner }
+        }
+        pub fn with_origin(inner: T, origin: Uri) -> Self {
+            let inner = tonic::client::Grpc::with_origin(inner, origin);
+            Self { inner }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> ScraperServiceClient<InterceptedService<T, F>>
+        where
+            F: tonic::service::Interceptor,
+            T::ResponseBody: Default,
+            T: tonic::codegen::Service<
+                http::Request<tonic::body::Body>,
+                Response = http::Response<
+                    <T as tonic::client::GrpcService<tonic::body::Body>>::ResponseBody,
+                >,
+            >,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::Body>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
+        {
+            ScraperServiceClient::new(InterceptedService::new(inner, interceptor))
+        }
+        /// Compress requests with the given encoding.
+        ///
+        /// This requires the server to support it otherwise it might respond with an
+        /// error.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.send_compressed(encoding);
+            self
+        }
+        /// Enable decompressing responses.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.inner = self.inner.accept_compressed(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_decoding_message_size(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.inner = self.inner.max_encoding_message_size(limit);
+            self
+        }
+        /// ── Sources ──────────────────────────────────────────────────
+        pub async fn list_sources(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Empty>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::Source>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/ListSources",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "ListSources"));
+            self.inner.server_streaming(req, path, codec).await
+        }
+        pub async fn get_source(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Source>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/GetSource",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "GetSource"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn create_source(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Source>,
+        ) -> std::result::Result<tonic::Response<super::Source>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/CreateSource",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "CreateSource"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn update_source(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Source>,
+        ) -> std::result::Result<tonic::Response<super::Source>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/UpdateSource",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "UpdateSource"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn delete_source(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Empty>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/DeleteSource",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "DeleteSource"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// ── Jobs ─────────────────────────────────────────────────────
+        pub async fn list_jobs(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Page>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::JobResponse>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/ListJobs",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "ListJobs"));
+            self.inner.server_streaming(req, path, codec).await
+        }
+        pub async fn get_job_by_id(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Job>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/GetJobById",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "GetJobById"));
+            self.inner.unary(req, path, codec).await
+        }
+        /// ── Items ────────────────────────────────────────────────────
+        pub async fn list_items(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ItemFilter>,
+        ) -> std::result::Result<
+            tonic::Response<tonic::codec::Streaming<super::Item>>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/ListItems",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "ListItems"));
+            self.inner.server_streaming(req, path, codec).await
+        }
+        pub async fn approve_item(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Item>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/ApproveItem",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "ApproveItem"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn reject_item(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Item>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/RejectItem",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "RejectItem"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn approve_all_valid(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Count>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/ApproveAllValid",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "ApproveAllValid"));
+            self.inner.unary(req, path, codec).await
+        }
+        pub async fn push_approved(
+            &mut self,
+            request: impl tonic::IntoRequest<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Count>, tonic::Status> {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic_prost::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/proto.ScraperService/PushApproved",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("proto.ScraperService", "PushApproved"));
+            self.inner.unary(req, path, codec).await
+        }
+    }
+}
+/// Generated server implementations.
+pub mod scraper_service_server {
+    #![allow(
+        unused_variables,
+        dead_code,
+        missing_docs,
+        clippy::wildcard_imports,
+        clippy::let_unit_value,
+    )]
+    use tonic::codegen::*;
+    /// Generated trait containing gRPC methods that should be implemented for use with ScraperServiceServer.
+    #[async_trait]
+    pub trait ScraperService: std::marker::Send + std::marker::Sync + 'static {
+        /// Server streaming response type for the ListSources method.
+        type ListSourcesStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::Source, tonic::Status>,
+            >
+            + std::marker::Send
+            + 'static;
+        /// ── Sources ──────────────────────────────────────────────────
+        async fn list_sources(
+            &self,
+            request: tonic::Request<super::Empty>,
+        ) -> std::result::Result<
+            tonic::Response<Self::ListSourcesStream>,
+            tonic::Status,
+        >;
+        async fn get_source(
+            &self,
+            request: tonic::Request<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Source>, tonic::Status>;
+        async fn create_source(
+            &self,
+            request: tonic::Request<super::Source>,
+        ) -> std::result::Result<tonic::Response<super::Source>, tonic::Status>;
+        async fn update_source(
+            &self,
+            request: tonic::Request<super::Source>,
+        ) -> std::result::Result<tonic::Response<super::Source>, tonic::Status>;
+        async fn delete_source(
+            &self,
+            request: tonic::Request<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Empty>, tonic::Status>;
+        /// Server streaming response type for the ListJobs method.
+        type ListJobsStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::JobResponse, tonic::Status>,
+            >
+            + std::marker::Send
+            + 'static;
+        /// ── Jobs ─────────────────────────────────────────────────────
+        async fn list_jobs(
+            &self,
+            request: tonic::Request<super::Page>,
+        ) -> std::result::Result<tonic::Response<Self::ListJobsStream>, tonic::Status>;
+        async fn get_job_by_id(
+            &self,
+            request: tonic::Request<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Job>, tonic::Status>;
+        /// Server streaming response type for the ListItems method.
+        type ListItemsStream: tonic::codegen::tokio_stream::Stream<
+                Item = std::result::Result<super::Item, tonic::Status>,
+            >
+            + std::marker::Send
+            + 'static;
+        /// ── Items ────────────────────────────────────────────────────
+        async fn list_items(
+            &self,
+            request: tonic::Request<super::ItemFilter>,
+        ) -> std::result::Result<tonic::Response<Self::ListItemsStream>, tonic::Status>;
+        async fn approve_item(
+            &self,
+            request: tonic::Request<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Item>, tonic::Status>;
+        async fn reject_item(
+            &self,
+            request: tonic::Request<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Item>, tonic::Status>;
+        async fn approve_all_valid(
+            &self,
+            request: tonic::Request<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Count>, tonic::Status>;
+        async fn push_approved(
+            &self,
+            request: tonic::Request<super::Id>,
+        ) -> std::result::Result<tonic::Response<super::Count>, tonic::Status>;
+    }
+    #[derive(Debug)]
+    pub struct ScraperServiceServer<T> {
+        inner: Arc<T>,
+        accept_compression_encodings: EnabledCompressionEncodings,
+        send_compression_encodings: EnabledCompressionEncodings,
+        max_decoding_message_size: Option<usize>,
+        max_encoding_message_size: Option<usize>,
+    }
+    impl<T> ScraperServiceServer<T> {
+        pub fn new(inner: T) -> Self {
+            Self::from_arc(Arc::new(inner))
+        }
+        pub fn from_arc(inner: Arc<T>) -> Self {
+            Self {
+                inner,
+                accept_compression_encodings: Default::default(),
+                send_compression_encodings: Default::default(),
+                max_decoding_message_size: None,
+                max_encoding_message_size: None,
+            }
+        }
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
+        where
+            F: tonic::service::Interceptor,
+        {
+            InterceptedService::new(Self::new(inner), interceptor)
+        }
+        /// Enable decompressing requests with the given encoding.
+        #[must_use]
+        pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.accept_compression_encodings.enable(encoding);
+            self
+        }
+        /// Compress responses with the given encoding, if the client supports it.
+        #[must_use]
+        pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
+            self.send_compression_encodings.enable(encoding);
+            self
+        }
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
+        #[must_use]
+        pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
+            self.max_decoding_message_size = Some(limit);
+            self
+        }
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
+        #[must_use]
+        pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
+            self.max_encoding_message_size = Some(limit);
+            self
+        }
+    }
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for ScraperServiceServer<T>
+    where
+        T: ScraperService,
+        B: Body + std::marker::Send + 'static,
+        B::Error: Into<StdError> + std::marker::Send + 'static,
+    {
+        type Response = http::Response<tonic::body::Body>;
+        type Error = std::convert::Infallible;
+        type Future = BoxFuture<Self::Response, Self::Error>;
+        fn poll_ready(
+            &mut self,
+            _cx: &mut Context<'_>,
+        ) -> Poll<std::result::Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+        fn call(&mut self, req: http::Request<B>) -> Self::Future {
+            match req.uri().path() {
+                "/proto.ScraperService/ListSources" => {
+                    #[allow(non_camel_case_types)]
+                    struct ListSourcesSvc<T: ScraperService>(pub Arc<T>);
+                    impl<
+                        T: ScraperService,
+                    > tonic::server::ServerStreamingService<super::Empty>
+                    for ListSourcesSvc<T> {
+                        type Response = super::Source;
+                        type ResponseStream = T::ListSourcesStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Empty>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::list_sources(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = ListSourcesSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.server_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/GetSource" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetSourceSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Id>
+                    for GetSourceSvc<T> {
+                        type Response = super::Source;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Id>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::get_source(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetSourceSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/CreateSource" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateSourceSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Source>
+                    for CreateSourceSvc<T> {
+                        type Response = super::Source;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Source>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::create_source(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateSourceSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/UpdateSource" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateSourceSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Source>
+                    for UpdateSourceSvc<T> {
+                        type Response = super::Source;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Source>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::update_source(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateSourceSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/DeleteSource" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteSourceSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Id>
+                    for DeleteSourceSvc<T> {
+                        type Response = super::Empty;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Id>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::delete_source(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteSourceSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/ListJobs" => {
+                    #[allow(non_camel_case_types)]
+                    struct ListJobsSvc<T: ScraperService>(pub Arc<T>);
+                    impl<
+                        T: ScraperService,
+                    > tonic::server::ServerStreamingService<super::Page>
+                    for ListJobsSvc<T> {
+                        type Response = super::JobResponse;
+                        type ResponseStream = T::ListJobsStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Page>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::list_jobs(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = ListJobsSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.server_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/GetJobById" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetJobByIdSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Id>
+                    for GetJobByIdSvc<T> {
+                        type Response = super::Job;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Id>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::get_job_by_id(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetJobByIdSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/ListItems" => {
+                    #[allow(non_camel_case_types)]
+                    struct ListItemsSvc<T: ScraperService>(pub Arc<T>);
+                    impl<
+                        T: ScraperService,
+                    > tonic::server::ServerStreamingService<super::ItemFilter>
+                    for ListItemsSvc<T> {
+                        type Response = super::Item;
+                        type ResponseStream = T::ListItemsStream;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::ResponseStream>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ItemFilter>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::list_items(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = ListItemsSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.server_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/ApproveItem" => {
+                    #[allow(non_camel_case_types)]
+                    struct ApproveItemSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Id>
+                    for ApproveItemSvc<T> {
+                        type Response = super::Item;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Id>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::approve_item(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = ApproveItemSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/RejectItem" => {
+                    #[allow(non_camel_case_types)]
+                    struct RejectItemSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Id>
+                    for RejectItemSvc<T> {
+                        type Response = super::Item;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Id>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::reject_item(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = RejectItemSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/ApproveAllValid" => {
+                    #[allow(non_camel_case_types)]
+                    struct ApproveAllValidSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Id>
+                    for ApproveAllValidSvc<T> {
+                        type Response = super::Count;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Id>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::approve_all_valid(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = ApproveAllValidSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/proto.ScraperService/PushApproved" => {
+                    #[allow(non_camel_case_types)]
+                    struct PushApprovedSvc<T: ScraperService>(pub Arc<T>);
+                    impl<T: ScraperService> tonic::server::UnaryService<super::Id>
+                    for PushApprovedSvc<T> {
+                        type Response = super::Count;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::Id>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as ScraperService>::push_approved(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = PushApprovedSvc(inner);
+                        let codec = tonic_prost::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                _ => {
+                    Box::pin(async move {
+                        let mut response = http::Response::new(
+                            tonic::body::Body::default(),
+                        );
+                        let headers = response.headers_mut();
+                        headers
+                            .insert(
+                                tonic::Status::GRPC_STATUS,
+                                (tonic::Code::Unimplemented as i32).into(),
+                            );
+                        headers
+                            .insert(
+                                http::header::CONTENT_TYPE,
+                                tonic::metadata::GRPC_CONTENT_TYPE,
+                            );
+                        Ok(response)
+                    })
+                }
+            }
+        }
+    }
+    impl<T> Clone for ScraperServiceServer<T> {
+        fn clone(&self) -> Self {
+            let inner = self.inner.clone();
+            Self {
+                inner,
+                accept_compression_encodings: self.accept_compression_encodings,
+                send_compression_encodings: self.send_compression_encodings,
+                max_decoding_message_size: self.max_decoding_message_size,
+                max_encoding_message_size: self.max_encoding_message_size,
+            }
+        }
+    }
+    /// Generated gRPC service name
+    pub const SERVICE_NAME: &str = "proto.ScraperService";
+    impl<T> tonic::server::NamedService for ScraperServiceServer<T> {
         const NAME: &'static str = SERVICE_NAME;
     }
 }

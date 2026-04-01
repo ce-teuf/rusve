@@ -1,9 +1,16 @@
 <script lang="ts">
     import { page } from "$app/state";
+    import { goto } from "$app/navigation";
+    import { enhance } from "$app/forms";
     import { PUBLIC_AUTH_URL } from "$env/static/public";
     import Button from "$lib/form/Button.svelte";
+    import Input from "$lib/form/Input.svelte";
     import LogoIcon from "$lib/icons/LogoIcon.svelte";
     import { toast } from "$lib/ui/toast";
+    import { setToken } from "$lib/mobile/auth";
+    import type { ActionData } from "./$types";
+
+    let { form }: { form: ActionData } = $props();
 
     const error = page.url.searchParams.get("error");
 
@@ -19,24 +26,61 @@
         }
     });
 
-    let loading = $state(false);
+    // On native mobile, listen for the deep link callback: com.rusve.app://callback?token=JWT
+    $effect(() => {
+        if (typeof window === "undefined") return;
+        const cap = (window as { Capacitor?: { isNative?: boolean } }).Capacitor;
+        if (!cap?.isNative) return;
+
+        let cleanup: (() => void) | undefined;
+        import("@capacitor/app").then(({ App }) => {
+            const listener = App.addListener("appUrlOpen", async ({ url }) => {
+                try {
+                    const token = new URL(url).searchParams.get("token");
+                    if (token) {
+                        await setToken(token);
+                        await goto("/dashboard");
+                    }
+                } catch {
+                    toast.error("Error", "Failed to complete login");
+                }
+            });
+            cleanup = () => listener.then((h) => h.remove());
+        });
+
+        return () => cleanup?.();
+    });
+
+    let oauthLoading = $state(false);
+    let emailLoading = $state(false);
+
+    let email = $state("");
+    $effect(() => { email = form?.email ?? ""; });
+    let password = $state("");
+
+    function isNative(): boolean {
+        if (typeof window === "undefined") return false;
+        return !!(window as { Capacitor?: { isNative?: boolean } }).Capacitor?.isNative;
+    }
 
     async function onLogin(provider: string): Promise<void> {
-        loading = true;
+        oauthLoading = true;
         try {
             const response = await fetch(`${PUBLIC_AUTH_URL}`);
             if (response.status !== 200) {
                 toast.error("Error", "Server is not running");
-                loading = false;
+                oauthLoading = false;
                 return;
             }
         } catch (err) {
             console.error(err);
             toast.error("Error", "Server is not running");
-            loading = false;
+            oauthLoading = false;
             return;
         }
-        window.location.href = `${PUBLIC_AUTH_URL}/oauth-login/${provider}`;
+        // On mobile: append ?mobile=true so service-auth redirects to the deep link.
+        const mobileSuffix = isNative() ? "?mobile=true" : "";
+        window.location.href = `${PUBLIC_AUTH_URL}/oauth-login/${provider}${mobileSuffix}`;
     }
 </script>
 
@@ -47,10 +91,45 @@
     </div>
 
     <div class="mt-6 sm:mx-auto sm:w-full sm:max-w-sm">
-        <div class="mt-6 grid gap-4">
-            <Button type="button" onclick={() => onLogin("google")} {loading}>
+
+        <!-- Email + password form -->
+        <form
+            method="POST"
+            action="?/login"
+            class="space-y-2"
+            use:enhance={() => {
+                emailLoading = true;
+                return async ({ update }) => {
+                    await update({ reset: false });
+                    emailLoading = false;
+                };
+            }}
+        >
+            <Input name="email" label="Email" bind:value={email} type="email" autocomplete="email" placeholder="you@example.com" />
+            <Input name="password" label="Password" bind:value={password} type="password" autocomplete="current-password" placeholder="••••••••••••" error={form?.error ?? ""} />
+            <Button type="submit" loading={emailLoading} class="w-full mt-2">Sign in</Button>
+        </form>
+
+        <p class="mt-4 text-center text-sm text-gray-400">
+            Don't have an account?
+            <a href="/auth/register" class="font-medium text-indigo-400 hover:text-indigo-300">Create one</a>
+        </p>
+
+        <!-- Divider -->
+        <div class="relative my-6">
+            <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                <div class="w-full border-t border-gray-700"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+                <span class="bg-gray-900 px-3 text-gray-400">Or continue with</span>
+            </div>
+        </div>
+
+        <!-- OAuth buttons -->
+        <div class="grid gap-4">
+            <Button type="button" onclick={() => onLogin("google")} loading={oauthLoading}>
                 {#snippet icon()}
-                    {#if !loading}
+                    {#if !oauthLoading}
                         <svg class="h-5 w-5" viewBox="0 0 24 24">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="white" />
                             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="white" />
@@ -63,9 +142,9 @@
                 <span class="ml-2 text-sm font-semibold leading-6">Continue with Google</span>
             </Button>
 
-            <Button onclick={() => onLogin("github")} {loading}>
+            <Button onclick={() => onLogin("github")} loading={oauthLoading}>
                 {#snippet icon()}
-                    {#if !loading}
+                    {#if !oauthLoading}
                         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                             <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd" />
                         </svg>

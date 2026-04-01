@@ -1,0 +1,51 @@
+syntax = "proto3";
+package proto;
+
+message Source {
+    string id               = 1;
+    string created          = 2;
+    string updated          = 3;
+    string name             = 4;
+    string source_url       = 5;
+    string source_type      = 6;
+    string integration_mode = 7;  // "AUTO" | "MANUAL"
+    string auto_schedule    = 8;  // cron expression e.g. "0 2 * * *"
+    string field_rules      = 9;  // JSON-serialized array of FieldRule
+    bool   active           = 10;
+}
+
+message Job {
+    string id          = 1;
+    string created     = 2;
+    string updated     = 3;
+    string source_id   = 4;
+    string source_url  = 5;
+    string source_type = 6;
+    string status      = 7;  // RUNNING | DONE | FAILED
+    int64  item_count  = 8;
+    string error       = 9;
+}
+
+message JobResponse {
+    Job    job         = 1;
+    string source_name = 2;
+}
+
+message Item {
+    string id                = 1;
+    string created           = 2;
+    string updated           = 3;
+    string job_id            = 4;
+    string raw_data          = 5;  // JSON-serialized
+    string validation_status = 6;  // PENDING | VALID | INVALID | APPROVED | REJECTED | PUSHED
+    string validation_errors = 7;  // JSON-serialized array of strings
+    string pushed_at         = 8;
+    string pushed_target     = 9;
+}
+
+message ItemFilter {
+    string job_id  = 1;
+    string status  = 2;  // "" = all
+    int64  offset  = 3;
+    int64  limit   = 4;
+}

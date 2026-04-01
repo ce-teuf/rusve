@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "vite dev",
         "build": "vite build",
+        "build:mobile": "BUILD_TARGET=mobile vite build",
         "preview": "vite preview",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -16,6 +17,7 @@
     "devDependencies": {
         "@playwright/test": "^1.58.2",
         "@sveltejs/adapter-node": "^5.5.4",
+        "@sveltejs/adapter-static": "^3.0.8",
         "@sveltejs/kit": "^2.55.0",
         "@sveltejs/vite-plugin-svelte": "^7.0.0",
         "@tailwindcss/forms": "^0.5.11",
@@ -37,6 +39,12 @@
     },
     "type": "module",
     "dependencies": {
+        "@capacitor/android": "^7.4.1",
+        "@capacitor/app": "^7.0.1",
+        "@capacitor/cli": "^7.4.1",
+        "@capacitor/core": "^7.4.1",
+        "@capacitor/ios": "^7.4.1",
+        "@capacitor/preferences": "^7.0.1",
         "@grpc/grpc-js": "^1.14.3",
         "@grpc/proto-loader": "^0.8.0",
         "bits-ui": "^2.16.4",

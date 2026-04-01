@@ -14,13 +14,20 @@ use opentelemetry::{global, KeyValue};
 use std::{collections::HashMap, sync::Arc};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-#[tracing::instrument(skip(state, headers), fields(provider = %provider))]
+/// Prefix added to the OAuth state parameter when the login came from the mobile app.
+/// The callback uses this to redirect to the deep link instead of the web URL.
+const MOBILE_STATE_PREFIX: &str = "mobile:";
+
+#[tracing::instrument(skip(state, headers, query), fields(provider = %provider))]
 pub async fn oauth_login(
     Path(provider): Path<String>,
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
+    Query(query): Query<HashMap<String, String>>,
 ) -> Result<Redirect, Redirect> {
     let start = std::time::Instant::now();
+    let is_mobile = query.get("mobile").map(|v| v == "true").unwrap_or(false);
+
     let parent_cx = global::get_text_map_propagator(|prop| {
         prop.extract(&service_auth::HeaderExtractor(&headers))
     });
@@ -50,14 +57,31 @@ pub async fn oauth_login(
     }
     let (auth_url, csrf_token) = client.add_extra_param("access_type", "offline").url();
 
+    // When the request comes from mobile, prefix the CSRF token with "mobile:" so
+    // the callback knows to redirect to the deep link instead of the web URL.
+    // The prefix is stored in the DB as part of the csrf_token key.
+    let csrf_key = if is_mobile {
+        format!("{}{}", MOBILE_STATE_PREFIX, csrf_token.secret())
+    } else {
+        csrf_token.secret().to_owned()
+    };
+
     // Save the CSRF token and PKCE verifier so we can verify them later.
-    // Here we are using the PostgreSQL database, but you can use whatever you want, e.g. Redis.
-    crate::auth_db::create_verifiers(&conn, csrf_token.secret(), pkce_verifier.secret())
+    crate::auth_db::create_verifiers(&conn, &csrf_key, pkce_verifier.secret())
         .await
         .map_err(|err| {
             tracing::error!("Failed to save verifier: {:?}", err);
             Redirect::to(&format!("{}/auth?error=1", state.env.client_url))
         })?;
+
+    // Replace the state in the URL with our prefixed key so the callback receives it.
+    let auth_url = if is_mobile {
+        auth_url
+            .as_str()
+            .replace(csrf_token.secret(), &csrf_key)
+    } else {
+        auth_url.to_string()
+    };
 
     state.metrics.requests_total.add(1, &[
         KeyValue::new("handler", "oauth_login"),
@@ -66,7 +90,7 @@ pub async fn oauth_login(
     state.metrics.request_duration_ms.record(start.elapsed().as_millis() as f64, &[
         KeyValue::new("handler", "oauth_login"),
     ]);
-    Ok(Redirect::to(auth_url.as_ref()))
+    Ok(Redirect::to(&auth_url))
 }
 
 #[tracing::instrument(skip(state, headers, query), fields(provider = %provider))]
@@ -95,6 +119,9 @@ pub async fn oauth_callback(
         tracing::error!("Missing CSRF token");
         Redirect::to(&format!("{}/auth?error=2", state.env.client_url))
     })?;
+
+    // Detect if this callback is for a mobile login (state was prefixed in oauth_login).
+    let is_mobile = csrf.starts_with(MOBILE_STATE_PREFIX);
 
     let verifiers = match crate::auth_db::select_verifiers_by_csrf(&conn, csrf).await {
         Ok(Some(verifiers)) => verifiers,
@@ -195,8 +222,13 @@ pub async fn oauth_callback(
     state.metrics.request_duration_ms.record(start.elapsed().as_millis() as f64, &[
         KeyValue::new("handler", "oauth_callback"),
     ]);
-    Ok(Redirect::to(&format!(
-        "{}/?token={}",
-        state.env.client_url, token.id
-    )))
+
+    // Mobile: redirect to the Capacitor deep link so the app can store the token.
+    // Web: redirect to the web client with the token as a query param (existing behaviour).
+    let redirect_url = if is_mobile {
+        format!("com.rusve.app://callback?token={}", token.id)
+    } else {
+        format!("{}/?token={}", state.env.client_url, token.id)
+    };
+    Ok(Redirect::to(&redirect_url))
 }

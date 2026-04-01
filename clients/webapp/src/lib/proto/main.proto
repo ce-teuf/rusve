@@ -5,6 +5,7 @@ import "users.proto";
 import "profile.proto";
 import "notes.proto";
 import "utils.proto";
+import "scraper.proto";
 
 message Empty {}
 
@@ -67,5 +68,25 @@ service UtilsService {
     // Send single file with content as stream
     rpc UploadFile(stream File) returns (stream File) {}
     rpc DeleteFileById(Id) returns (Empty) {}
+}
+
+service ScraperService {
+    // ── Sources ──────────────────────────────────────────────────
+    rpc ListSources     (Empty)      returns (stream Source) {}
+    rpc GetSource       (Id)         returns (Source) {}
+    rpc CreateSource    (Source)     returns (Source) {}
+    rpc UpdateSource    (Source)     returns (Source) {}
+    rpc DeleteSource    (Id)         returns (Empty) {}
+
+    // ── Jobs ─────────────────────────────────────────────────────
+    rpc ListJobs        (Page)       returns (stream JobResponse) {}
+    rpc GetJobById      (Id)         returns (Job) {}
+
+    // ── Items ────────────────────────────────────────────────────
+    rpc ListItems       (ItemFilter) returns (stream Item) {}
+    rpc ApproveItem     (Id)         returns (Item) {}
+    rpc RejectItem      (Id)         returns (Item) {}
+    rpc ApproveAllValid (Id)         returns (Count) {}
+    rpc PushApproved    (Id)         returns (Count) {}
 }
 

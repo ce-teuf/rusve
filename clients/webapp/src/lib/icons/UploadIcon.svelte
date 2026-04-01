@@ -1,3 +1,9 @@
+<script lang="ts">
+    interface Props {
+        class?: string;
+    }
+    let {class: className = ""}: Props = $props();
+</script>
 <svg
     xmlns="http://www.w3.org/2000/svg"
     width="20"
@@ -8,7 +14,7 @@
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
-    class="feather feather-upload"
+    class="{className} feather feather-upload"
 >
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
     <polyline points="17 8 12 3 7 8"></polyline>

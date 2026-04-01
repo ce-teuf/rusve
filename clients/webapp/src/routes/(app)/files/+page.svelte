@@ -6,8 +6,17 @@
     import UploadIcon from "$lib/icons/UploadIcon.svelte";
     import { toast } from "$lib/ui/toast";
     import type { PageData, ActionData } from "./$types";
+    import type { File__Output } from "$lib/proto/proto/File"
 
-    let { data, form }: { data: PageData; form: ActionData } = $props();
+    let { data, form }: { 
+        data: PageData & {
+            files: File__Output[];
+            total: number;
+            pageSize: number;
+            error?: string;
+        }; 
+        form: ActionData 
+    } = $props();
 
     $effect(() => {
         if (form?.error || data.error) {

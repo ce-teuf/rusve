@@ -7,6 +7,7 @@
         form?: string;
         href?: string;
         loading?: boolean;
+        disabled?: boolean;
         class?: string;
         icon?: Snippet;
         children?: Snippet;
@@ -19,6 +20,7 @@
         form,
         href = "",
         loading = false,
+        disabled = false,
         class: className = "",
         icon,
         children,
@@ -40,7 +42,7 @@
         {onclick}
         {form}
         {type}
-        disabled={loading}
+        disabled={loading || disabled}
         class="{base} {variants[variant]} {className}"
     >
         {#if loading}

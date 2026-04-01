@@ -42,5 +42,6 @@ tonic-prost = "0.14.5"
 # S3
 rust-s3 = "0.33"
 
-# Sendgrid
+# Email (Proton SMTP with Sendgrid fallback)
 sendgrid = { version = "0.19", features = ["async"] }
+lettre = { version = "0.11", features = ["tokio1-native-tls", "smtp-transport", "builder"] }

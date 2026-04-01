@@ -42,6 +42,12 @@ pub struct Env {
     pub rust_log: String,
     pub database_url: String,
     pub sendgrid_api_key: String,
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_username: String,
+    pub smtp_password: String,
+    pub smtp_from_email: String,
+    pub smtp_from_name: String,
     pub s3_bucket_name: String,
     pub s3_access_key: String,
     pub s3_secret_key: String,
@@ -56,6 +62,15 @@ pub fn init_envs() -> Result<Env> {
         database_url: std::env::var("DATABASE_URL").context("DATABASE_URL is not set")?,
         sendgrid_api_key: std::env::var("SENDGRID_API_KEY")
             .context("SENDGRID_API_KEY is not set")?,
+        smtp_host: std::env::var("SMTP_HOST").unwrap_or_default(),
+        smtp_port: std::env::var("SMTP_PORT")
+            .unwrap_or_else(|_| "587".to_string())
+            .parse()
+            .unwrap_or(587),
+        smtp_username: std::env::var("SMTP_USERNAME").unwrap_or_default(),
+        smtp_password: std::env::var("SMTP_PASSWORD").unwrap_or_default(),
+        smtp_from_email: std::env::var("SMTP_FROM_EMAIL").unwrap_or_default(),
+        smtp_from_name: std::env::var("SMTP_FROM_NAME").unwrap_or_else(|_| "UpSend".to_string()),
         s3_bucket_name: std::env::var("S3_BUCKET_NAME").context("S3_BUCKET_NAME is not set")?,
         s3_access_key: std::env::var("S3_ACCESS_KEY").context("S3_ACCESS_KEY is not set")?,
         s3_secret_key: std::env::var("S3_SECRET_KEY").context("S3_SECRET_KEY is not set")?,
@@ -139,13 +154,15 @@ pub fn connect_to_db(env: &Env) -> Result<deadpool_postgres::Pool> {
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct Claims {
-    pub id: String,
+pub struct OAuthClaims {
+    pub sub: String,
+    pub email: String,
+    pub avatar: String,
 }
 pub fn auth(
     metadata: &tonic::metadata::MetadataMap,
     jwt_secret: &str,
-) -> Result<Claims, tonic::Status> {
+) -> Result<OAuthClaims, tonic::Status> {
     let token = match metadata.get("x-authorization") {
         Some(token) => token,
         None => {
@@ -167,7 +184,7 @@ pub fn auth(
             tonic::Status::unauthenticated("Invalid authorization token")
         })?;
 
-    let token_message = jsonwebtoken::decode::<Claims>(
+    let token_message = jsonwebtoken::decode::<OAuthClaims>(
         token,
         &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_ref()),
         &jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256),

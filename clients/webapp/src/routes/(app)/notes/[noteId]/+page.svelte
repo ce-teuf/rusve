@@ -24,7 +24,7 @@
 </script>
 
 {#if confirm}
-    <ConfirmModal id={data.note.id} bind:open={confirm} />
+    <ConfirmModal id={data.note!.id} bind:open={confirm} />
 {/if}
 
 <form
@@ -44,15 +44,15 @@
             {#if !isModal}
                 <h2 class="flex items-center gap-2 text-base font-semibold leading-7 text-gray-100">Note details</h2>
             {/if}
-            <p class="mt-1 text-sm leading-6 text-gray-200">{data.note.id}</p>
+            <p class="mt-1 text-sm leading-6 text-gray-200">{data.note!.id}</p>
         </div>
         <div class="mt-10 grid grid-cols-1 gap-x-6 sm:grid-cols-6">
-            <input type="hidden" name="id" value={data.note.id} />
+            <input type="hidden" name="id" value={data.note!.id} />
             <div class="sm:col-span-4">
-                <Input name="title" label="Title" bind:value={data.note.title} error={extractError(form?.fields, "title")} />
+                <Input name="title" label="Title" bind:value={data.note!.title} error={extractError(form?.fields, "title")} />
             </div>
             <div class="col-span-full">
-                <Input name="content" label="Content" bind:value={data.note.content} rows={3} error={extractError(form?.fields, "content")} />
+                <Input name="content" label="Content" bind:value={data.note!.content} rows={3} error={extractError(form?.fields, "content")} />
             </div>
             <div class="col-span-full flex justify-end gap-2">
                 <Button onclick={() => { confirm = true; }} type="button" class="w-20" variant="danger">Delete</Button>

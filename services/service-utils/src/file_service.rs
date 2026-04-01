@@ -9,7 +9,7 @@ pub async fn count_files_by_target_id(
 ) -> Result<Response<Count>, Status> {
     let start = std::time::Instant::now();
     let metadata = request.metadata();
-    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.id;
+    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.email;
 
     let conn = pool.get().await.map_err(|e| {
         tracing::error!("Failed to get connection: {:?}", e);
@@ -34,7 +34,7 @@ pub async fn get_files_by_target_id(
 ) -> Result<Response<ReceiverStream<Result<File, Status>>>, Status> {
     let start = std::time::Instant::now();
     let metadata = request.metadata();
-    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.id;
+    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.email;
 
     let conn = pool.get().await.map_err(|e| {
         tracing::error!("Failed to get connection from pool: {:?}", e);
@@ -95,7 +95,7 @@ pub async fn get_file_by_id(
 ) -> Result<Response<ReceiverStream<Result<File, Status>>>, Status> {
     let start = std::time::Instant::now();
     let metadata = request.metadata();
-    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.id;
+    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.email;
 
     let conn = pool.get().await.map_err(|e| {
         tracing::error!("Failed to get connection from pool: {:?}", e);
@@ -140,7 +140,7 @@ pub async fn upload_file(
 ) -> Result<Response<ReceiverStream<Result<File, Status>>>, Status> {
     let start = std::time::Instant::now();
     let metadata = request.metadata();
-    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.id;
+    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.email;
 
     let mut conn = pool.get().await.map_err(|e| {
         tracing::error!("Failed to get connection from pool: {:?}", e);
@@ -199,7 +199,7 @@ pub async fn delete_file_by_id(
 ) -> Result<Response<Empty>, Status> {
     let start = std::time::Instant::now();
     let metadata = request.metadata();
-    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.id;
+    let target_id = service_utils::auth(metadata, &env.jwt_secret)?.email;
 
     let mut conn = pool.get().await.map_err(|e| {
         tracing::error!("Failed to get connection from pool: {:?}", e);

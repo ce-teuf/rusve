@@ -7,10 +7,7 @@ use opentelemetry::{
 };
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::{
-    metrics::SdkMeterProvider,
-    propagation::TraceContextPropagator,
-    runtime,
-    trace::TracerProvider,
+    metrics::SdkMeterProvider, propagation::TraceContextPropagator, runtime, trace::TracerProvider,
     Resource,
 };
 use rustls::RootCertStore;
@@ -52,6 +49,7 @@ pub struct Env {
     pub auth_url: String,
     pub client_url: String,
     pub users_url: String,
+    pub utils_url: String,
     pub google_client_id: String,
     pub google_client_secret: String,
     pub github_client_id: String,
@@ -67,6 +65,7 @@ pub fn init_envs() -> Result<Env> {
         auth_url: std::env::var("AUTH_URL").context("AUTH_URL is not set")?,
         client_url: std::env::var("CLIENT_URL").context("CLIENT_URL is not set")?,
         users_url: std::env::var("USERS_URL").context("USERS_URL is not set")?,
+        utils_url: std::env::var("UTILS_URL").context("UTILS_URL is not set")?,
         google_client_id: std::env::var("GOOGLE_CLIENT_ID")
             .context("GOOGLE_CLIENT_ID is not set")?,
         google_client_secret: std::env::var("GOOGLE_CLIENT_SECRET")
@@ -113,7 +112,10 @@ pub fn init_metrics(service_name: &'static str) -> SdkMeterProvider {
         .build();
     let provider = SdkMeterProvider::builder()
         .with_reader(reader)
-        .with_resource(Resource::new(vec![KeyValue::new("service.name", service_name)]))
+        .with_resource(Resource::new(vec![KeyValue::new(
+            "service.name",
+            service_name,
+        )]))
         .build();
     opentelemetry::global::set_meter_provider(provider.clone());
     provider
@@ -129,7 +131,10 @@ pub fn init_tracer(service_name: &'static str) -> TracerProvider {
         .build()
         .expect("Failed to build OTLP span exporter");
     TracerProvider::builder()
-        .with_resource(Resource::new(vec![KeyValue::new("service.name", service_name)]))
+        .with_resource(Resource::new(vec![KeyValue::new(
+            "service.name",
+            service_name,
+        )]))
         .with_batch_exporter(exporter, runtime::Tokio)
         .build()
 }

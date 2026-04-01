@@ -1,0 +1,19 @@
+finir la phase 5 du scraper : hase 5: SvelteKit Admin UI           
+
+● Write(clients/webapp/src/routes/(admin)/+layout.server.ts)                                                           
+  ⎿  Wrote 12 lines to clients/webapp/src/routes/(admin)/+layout.server.ts
+       1 import { redirect } from "@sveltejs/kit";                                                                     
+       2 import type { LayoutServerLoad } from "./$types";  
+       3                                                                                                               
+       4 export const load: LayoutServerLoad = ({ locals }) => {
+       5     if (locals.user.role !== 2) {                                                                             
+       6         redirect(302, "/dashboard");               
+       7     }
+       8     return {
+       9         email: locals.user.email,
+      10         avatar: locals.user.avatar,
+     … +2 lines (ctrl+o to expand)
+  ⎿  You've hit your limit · resets 3am (America/New_York)
+                                        
+✻ Baked for 16m 41s
+                                                

@@ -5,6 +5,8 @@ volumes:
   db_users_data:
   db_notes_data:
   db_utils_data:
+  db_scraping_data:
+  db_data_data:
 
 services:
   caddy:
@@ -66,6 +68,40 @@ services:
       POSTGRES_DB: users
     volumes:
       - db_utils_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-scraping:
+    container_name: rusve-db-scraping
+    image: ceteuf/postgres-extended:pg18-alpine-v3
+    ports:
+      - 5441:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: scraping
+    volumes:
+      - db_scraping_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-data:
+    container_name: rusve-db-data
+    image: ceteuf/postgres-extended:pg18-alpine-v3
+    ports:
+      - 5442:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: data
+    volumes:
+      - db_data_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
